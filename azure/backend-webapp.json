@@ -1,0 +1,87 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "webAppName": {
+      "type": "string",
+      "defaultValue": "gpt-realtime-backend",
+      "metadata": {
+        "description": "Name of the Web App"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "sku": {
+      "type": "string",
+      "defaultValue": "B1",
+      "allowedValues": [
+        "B1",
+        "B2",
+        "B3",
+        "S1",
+        "S2",
+        "S3",
+        "P1",
+        "P2",
+        "P3"
+      ]
+    },
+    "openAiApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "OpenAI API Key"
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "apiVersion": "2021-02-01",
+      "name": "[concat(parameters('webAppName'), '-plan')]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('sku')]"
+      },
+      "kind": "linux",
+      "properties": {
+        "reserved": true
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2021-02-01",
+      "name": "[parameters('webAppName')]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', concat(parameters('webAppName'), '-plan'))]"
+      ],
+      "properties": {
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', concat(parameters('webAppName'), '-plan'))]",
+        "siteConfig": {
+          "linuxFxVersion": "DOTNETCORE|9.0",
+          "alwaysOn": true,
+          "webSocketsEnabled": true,
+          "appSettings": [
+            {
+              "name": "OpenAI__ApiKey",
+              "value": "[parameters('openAiApiKey')]"
+            },
+            {
+              "name": "OpenAI__Model",
+              "value": "gpt-4o-realtime-preview-2024-10-01"
+            },
+            {
+              "name": "OpenAI__Voice",
+              "value": "alloy"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

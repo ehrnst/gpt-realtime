@@ -1,0 +1,6 @@
+@GptRealtime.Api_HostAddress = http://localhost:5234
+
+GET {{GptRealtime.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
