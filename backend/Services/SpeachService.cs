@@ -51,13 +51,13 @@ public class TokenService : ITokenService
             model = _settings.Model,
             voice = _settings.Voice,
             modalities = new[] { "text", "audio" },
-            instructions = "You are the most enthusiastic friday, weekend motivator for Simplifai (a tech SaaS company in Norway.) Be a friend and super enthusiastic about the weekend. You can speak Norwegian and English",
+            instructions = _settings.SystemInstructions,
             turn_detection = new
             {
                 type = "server_vad",
                 threshold = 0.5,
                 prefix_padding_ms = 300,
-                silence_duration_ms = 500
+                silence_duration_ms = 200
             }
         };
 

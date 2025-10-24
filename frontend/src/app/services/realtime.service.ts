@@ -15,16 +15,24 @@ export class RealtimeService {
   private localStream: MediaStream | null = null;
   private remoteAudioElement: HTMLAudioElement | null = null;
   private messageSubject = new Subject<RealtimeMessage>();
+  private sessionInstructions: string = '';
+  private voiceSetting: string = 'alloy';
 
   async connect(
     clientSecret: string,
     realtimeUrl: string,
-    audioElement: HTMLAudioElement
+    audioElement: HTMLAudioElement,
+    systemInstructions?: string,
+    voice?: string
   ): Promise<Observable<RealtimeMessage>> {
     this.disconnect();
 
     this.remoteAudioElement = audioElement;
     this.messageSubject = new Subject<RealtimeMessage>();
+    
+    // Store the instructions and voice from backend
+    this.sessionInstructions = systemInstructions || 'You are a helpful AI assistant.';
+    this.voiceSetting = voice || 'alloy';
 
     this.peerConnection = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -152,26 +160,29 @@ export class RealtimeService {
     }
   }
 
-  private triggerInitialResponse(): void {
-    // Request an immediate response from the assistant without any user input
+  private triggerGreeting(): void {
+    // Request an immediate response from the assistant without custom instructions
+    // This lets the assistant use the session instructions for greeting
+    console.log('Triggering greeting response');
     this.sendEvent({
-      type: 'response.create',
-      response: {
-        modalities: ['audio', 'text'],
-        instructions: 'Answer the phone call in a normal matter.'
-      }
+      type: 'response.create'
     });
   }
 
   private sendSessionUpdate(): void {
     // Send session update to initialize the conversation
+    console.log('Sending session update with instructions:', this.sessionInstructions);
     this.sendEvent({
       type: 'session.update',
       session: {
-        instructions: 'You are the most enthusiastic friday, weekend motivator for Simplifai (a tech SaaS company in Norway.) Be a friend and super enthusiastic about the weekend. You can speak Norwegian and English',
-        voice: 'alloy',
+        modalities: ['text', 'audio'],
+        instructions: this.sessionInstructions,
+        voice: this.voiceSetting,
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
+        input_audio_transcription: {
+          model: 'whisper-1'
+        },
         turn_detection: {
           type: 'server_vad',
           threshold: 0.5,
@@ -190,11 +201,12 @@ export class RealtimeService {
         const payload = JSON.parse(event.data);
         this.messageSubject.next(payload);
         
-        // When session is created, trigger initial response
-        if (payload.type === 'session.created') {
+        // When session is updated (after our session.update), trigger greeting
+        if (payload.type === 'session.updated') {
+          console.log('Session updated, triggering greeting');
           setTimeout(() => {
-            this.triggerInitialResponse();
-          }, 500); // Small delay to ensure session is fully ready
+            this.triggerGreeting();
+          }, 100); // Small delay to ensure everything is ready
         }
       } catch (error) {
         console.error('Failed to parse realtime message', error);

@@ -16,6 +16,7 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy {
   messages: string[] = [];
   private messageSubscription?: Subscription;
   @ViewChild('remoteAudio') remoteAudioRef?: ElementRef<HTMLAudioElement>;
+  @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;
 
   constructor(
     private tokenService: TokenService,
@@ -26,6 +27,20 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.hangUp();
+  }
+
+  getStatusClass(): string {
+    if (this.isConnected) return 'status-connected';
+    if (this.isConnecting) return 'status-connecting';
+    return 'status-ready';
+  }
+
+  getTimestamp(): string {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  trackByMessage(index: number, message: string): number {
+    return index;
   }
 
   async startCall(): Promise<void> {
@@ -42,7 +57,9 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy {
       const messages$ = await this.realtimeService.connect(
         tokenData.clientSecret,
         tokenData.realtimeUrl,
-        this.remoteAudioRef.nativeElement
+        this.remoteAudioRef.nativeElement,
+        tokenData.systemInstructions,
+        tokenData.voice
       );
 
       this.messageSubscription = messages$.subscribe({
@@ -161,5 +178,13 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy {
     if (this.messages.length > 50) {
       this.messages.shift();
     }
+    
+    // Auto-scroll to bottom
+    setTimeout(() => {
+      if (this.messagesContainer) {
+        const element = this.messagesContainer.nativeElement;
+        element.scrollTop = element.scrollHeight;
+      }
+    }, 100);
   }
 }

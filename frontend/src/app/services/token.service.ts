@@ -7,6 +7,8 @@ export interface SessionToken {
   clientSecret: string;
   expiresAt: string;
   realtimeUrl: string;
+  systemInstructions: string;
+  voice: string;
 }
 
 @Injectable({
