@@ -4,6 +4,5 @@ namespace GptRealtime.Api.Services;
 
 public interface ITokenService
 {
-    SessionToken GenerateToken();
-    bool ValidateToken(string token);
+    Task<SessionToken> CreateSessionTokenAsync(CancellationToken cancellationToken = default);
 }

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -11,9 +9,11 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=8080
       - OpenAI__ApiKey=${OPENAI_API_KEY}
-      - OpenAI__BaseUrl=${OPENAI_BASE_URL:-}
-      - OpenAI__Model=${OPENAI_MODEL:-gpt-4o-realtime-preview-2024-10-01}
-      - OpenAI__Voice=${OPENAI_VOICE:-alloy}
+      - OpenAI__BaseUrl=${OPENAI_BASE_URL}
+      - OpenAI__Model=${OPENAI_MODEL}
+      - OpenAI__Voice=${OPENAI_VOICE}
+    env_file:
+      - .env
     networks:
       - app-network
 

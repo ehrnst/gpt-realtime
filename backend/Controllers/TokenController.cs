@@ -15,9 +15,9 @@ public class TokenController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetToken()
+    public async Task<IActionResult> GetToken(CancellationToken cancellationToken)
     {
-        var token = _tokenService.GenerateToken();
+        var token = await _tokenService.CreateSessionTokenAsync(cancellationToken);
         return Ok(token);
     }
 }

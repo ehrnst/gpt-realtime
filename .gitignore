@@ -9,6 +9,7 @@ backend/obj/
 backend/Properties/
 backend/*.user
 backend/.vs/
+backend/appsettings.Development.json
 
 # Frontend
 frontend/node_modules/

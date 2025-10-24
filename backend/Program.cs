@@ -5,8 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.Configure<OpenAISettings>(builder.Configuration.GetSection("OpenAI"));
-builder.Services.AddSingleton<ITokenService, TokenService>();
-builder.Services.AddScoped<IRealtimeService, RealtimeService>();
+builder.Services.AddHttpClient<ITokenService, TokenService>();
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -33,10 +32,13 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+else
+{
+    // Only use HTTPS redirection in production
+    app.UseHttpsRedirection();
+}
 
-app.UseWebSockets();
 app.UseCors("AllowFrontend");
-app.UseHttpsRedirection();
 app.MapControllers();
 
 app.Run();

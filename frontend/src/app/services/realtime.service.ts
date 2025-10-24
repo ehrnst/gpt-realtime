@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Subject, Observable } from 'rxjs';
-import { environment } from '../../environments/environment';
+import { Observable, Subject } from 'rxjs';
 
 export interface RealtimeMessage {
   type: string;
@@ -11,167 +10,211 @@ export interface RealtimeMessage {
   providedIn: 'root'
 })
 export class RealtimeService {
-  private webSocket: WebSocket | null = null;
+  private peerConnection: RTCPeerConnection | null = null;
+  private eventsChannel: RTCDataChannel | null = null;
+  private localStream: MediaStream | null = null;
+  private remoteAudioElement: HTMLAudioElement | null = null;
   private messageSubject = new Subject<RealtimeMessage>();
-  private audioContext: AudioContext | null = null;
-  private mediaStream: MediaStream | null = null;
-  private audioWorkletNode: AudioWorkletNode | null = null;
 
-  constructor() { }
+  async connect(
+    clientSecret: string,
+    realtimeUrl: string,
+    audioElement: HTMLAudioElement
+  ): Promise<Observable<RealtimeMessage>> {
+    this.disconnect();
 
-  connect(token: string): Observable<RealtimeMessage> {
-    const wsUrl = environment.apiUrl.replace('http://', 'ws://').replace('https://', 'wss://');
-    this.webSocket = new WebSocket(`${wsUrl}/api/realtime/ws?token=${token}`);
+    this.remoteAudioElement = audioElement;
+    this.messageSubject = new Subject<RealtimeMessage>();
 
-    this.webSocket.onopen = () => {
-      console.log('WebSocket connected');
+    this.peerConnection = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+
+    this.peerConnection.oniceconnectionstatechange = () => {
+      this.messageSubject.next({
+        type: 'peer.ice_state',
+        state: this.peerConnection?.iceConnectionState
+      });
     };
 
-    this.webSocket.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-        this.messageSubject.next(message);
-        this.handleMessage(message);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
+    this.peerConnection.ontrack = (event) => {
+      const [stream] = event.streams;
+      if (stream && this.remoteAudioElement) {
+        this.remoteAudioElement.srcObject = stream;
+        this.remoteAudioElement.play().catch(() => {
+          // Autoplay might fail without user interaction; ignore.
+        });
       }
     };
 
-    this.webSocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
+    this.peerConnection.ondatachannel = (event) => {
+      this.configureDataChannel(event.channel);
     };
 
-    this.webSocket.onclose = () => {
-      console.log('WebSocket closed');
-      this.cleanup();
-    };
+    this.eventsChannel = this.peerConnection.createDataChannel('oai-events');
+    this.configureDataChannel(this.eventsChannel);
+
+    this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    this.localStream.getAudioTracks().forEach((track) => {
+      track.enabled = false; // Start muted until recording begins.
+      this.peerConnection?.addTrack(track, this.localStream as MediaStream);
+    });
+
+    const offer = await this.peerConnection.createOffer();
+    await this.peerConnection.setLocalDescription(offer);
+
+    // For Azure WebRTC, we need to add the deployment parameter to the URL
+    const webrtcUrlWithDeployment = realtimeUrl.includes('?') 
+      ? `${realtimeUrl}&model=gpt-4o-realtime-preview` 
+      : `${realtimeUrl}?model=gpt-4o-realtime-preview`;
+
+    const response = await fetch(webrtcUrlWithDeployment, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${clientSecret}`,
+        'Content-Type': 'application/sdp'
+      },
+      body: offer.sdp ?? ''
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Realtime offer failed: ${response.status} ${errorText}`);
+    }
+
+    const answer = await response.text();
+    await this.peerConnection.setRemoteDescription({ type: 'answer', sdp: answer });
 
     return this.messageSubject.asObservable();
   }
 
   disconnect(): void {
-    if (this.webSocket) {
-      this.webSocket.close();
-      this.webSocket = null;
+    if (this.eventsChannel) {
+      this.eventsChannel.close();
+      this.eventsChannel = null;
     }
-    this.cleanup();
-  }
 
-  sendMessage(message: RealtimeMessage): void {
-    if (this.webSocket && this.webSocket.readyState === WebSocket.OPEN) {
-      this.webSocket.send(JSON.stringify(message));
+    if (this.peerConnection) {
+      this.peerConnection.getSenders().forEach((sender) => sender.track?.stop());
+      this.peerConnection.close();
+      this.peerConnection = null;
     }
+
+    if (this.localStream) {
+      this.localStream.getTracks().forEach((track) => track.stop());
+      this.localStream = null;
+    }
+
+    if (this.remoteAudioElement) {
+      this.remoteAudioElement.srcObject = null;
+      this.remoteAudioElement = null;
+    }
+    this.messageSubject.complete();
+    this.messageSubject = new Subject<RealtimeMessage>();
   }
 
   async startAudioCapture(): Promise<void> {
-    try {
-      this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.audioContext = new AudioContext({ sampleRate: 24000 });
-      
-      const source = this.audioContext.createMediaStreamSource(this.mediaStream);
-      
-      // Create a script processor for now (AudioWorklet would be better for production)
-      const processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-      
-      processor.onaudioprocess = (e) => {
-        const inputData = e.inputBuffer.getChannelData(0);
-        const pcm16 = this.floatTo16BitPCM(inputData);
-        const base64Audio = this.arrayBufferToBase64(pcm16.buffer);
-        
-        this.sendMessage({
-          type: 'input_audio_buffer.append',
-          audio: base64Audio
-        });
-      };
-
-      source.connect(processor);
-      processor.connect(this.audioContext.destination);
-    } catch (error) {
-      console.error('Error starting audio capture:', error);
-      throw error;
+    if (!this.localStream) {
+      throw new Error('No local media stream available. Connect first.');
     }
+
+    if (!this.eventsChannel || this.eventsChannel.readyState !== 'open') {
+      throw new Error('Realtime channel is not ready yet.');
+    }
+
+    this.localStream.getAudioTracks().forEach((track) => {
+      track.enabled = true;
+    });
+
+    this.sendEvent({ type: 'input_audio_buffer.start' });
   }
 
   stopAudioCapture(): void {
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop());
-      this.mediaStream = null;
+    if (!this.localStream) {
+      return;
     }
-    if (this.audioContext) {
-      this.audioContext.close();
-      this.audioContext = null;
+
+    if (!this.eventsChannel || this.eventsChannel.readyState !== 'open') {
+      return;
+    }
+
+    this.localStream.getAudioTracks().forEach((track) => {
+      track.enabled = false;
+    });
+
+    this.sendEvent({ type: 'input_audio_buffer.commit' });
+    this.sendEvent({ type: 'response.create' });
+  }
+
+  sendEvent(event: RealtimeMessage): void {
+    if (this.eventsChannel?.readyState === 'open') {
+      this.eventsChannel.send(JSON.stringify(event));
     }
   }
 
-  private handleMessage(message: RealtimeMessage): void {
-    switch (message.type) {
-      case 'response.audio.delta':
-        if (message['delta']) {
-          this.playAudioDelta(message['delta']);
+  private triggerInitialResponse(): void {
+    // Request an immediate response from the assistant without any user input
+    this.sendEvent({
+      type: 'response.create',
+      response: {
+        modalities: ['audio', 'text'],
+        instructions: 'Answer the phone call in a normal matter.'
+      }
+    });
+  }
+
+  private sendSessionUpdate(): void {
+    // Send session update to initialize the conversation
+    this.sendEvent({
+      type: 'session.update',
+      session: {
+        instructions: 'You are the most enthusiastic friday, weekend motivator for Simplifai (a tech SaaS company in Norway.) Be a friend and super enthusiastic about the weekend. You can speak Norwegian and English',
+        voice: 'alloy',
+        input_audio_format: 'pcm16',
+        output_audio_format: 'pcm16',
+        turn_detection: {
+          type: 'server_vad',
+          threshold: 0.5,
+          prefix_padding_ms: 300,
+          silence_duration_ms: 500
         }
-        break;
-      case 'error':
-        console.error('Realtime API error:', message);
-        break;
-    }
-  }
-
-  private playAudioDelta(base64Audio: string): void {
-    try {
-      const audioData = this.base64ToArrayBuffer(base64Audio);
-      if (!this.audioContext) {
-        this.audioContext = new AudioContext({ sampleRate: 24000 });
       }
-      
-      const int16Array = new Int16Array(audioData);
-      const float32Array = new Float32Array(int16Array.length);
-      
-      for (let i = 0; i < int16Array.length; i++) {
-        float32Array[i] = int16Array[i] / 32768.0;
+    });
+  }
+
+  private configureDataChannel(channel: RTCDataChannel): void {
+    this.eventsChannel = channel;
+
+    channel.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        this.messageSubject.next(payload);
+        
+        // When session is created, trigger initial response
+        if (payload.type === 'session.created') {
+          setTimeout(() => {
+            this.triggerInitialResponse();
+          }, 500); // Small delay to ensure session is fully ready
+        }
+      } catch (error) {
+        console.error('Failed to parse realtime message', error);
       }
+    };
+
+    channel.onopen = () => {
+      this.messageSubject.next({ type: 'peer.data_channel', state: 'open' });
       
-      const audioBuffer = this.audioContext.createBuffer(1, float32Array.length, 24000);
-      audioBuffer.getChannelData(0).set(float32Array);
-      
-      const source = this.audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(this.audioContext.destination);
-      source.start();
-    } catch (error) {
-      console.error('Error playing audio:', error);
-    }
-  }
+      // Send session update after data channel opens
+      this.sendSessionUpdate();
+    };
 
-  private floatTo16BitPCM(float32Array: Float32Array): Int16Array {
-    const int16Array = new Int16Array(float32Array.length);
-    for (let i = 0; i < float32Array.length; i++) {
-      const s = Math.max(-1, Math.min(1, float32Array[i]));
-      int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-    }
-    return int16Array;
-  }
+    channel.onclose = () => {
+      this.messageSubject.next({ type: 'peer.data_channel', state: 'closed' });
+    };
 
-  private arrayBufferToBase64(buffer: ArrayBuffer): string {
-    const bytes = new Uint8Array(buffer);
-    let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
-  }
-
-  private base64ToArrayBuffer(base64: string): ArrayBuffer {
-    const binaryString = atob(base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    return bytes.buffer;
-  }
-
-  private cleanup(): void {
-    this.stopAudioCapture();
-    this.messageSubject.complete();
-    this.messageSubject = new Subject<RealtimeMessage>();
+    channel.onerror = (error) => {
+      console.error('Realtime data channel error', error);
+      this.messageSubject.next({ type: 'peer.data_channel', state: 'error', error });
+    };
   }
 }

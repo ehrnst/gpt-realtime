@@ -4,8 +4,9 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface SessionToken {
-  token: string;
+  clientSecret: string;
   expiresAt: string;
+  realtimeUrl: string;
 }
 
 @Injectable({

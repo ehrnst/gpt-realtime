@@ -3,35 +3,24 @@
   
   <div class="status-panel">
     <p class="status">Status: {{ statusMessage }}</p>
+    <p class="info-text" *ngIf="!isConnected && !isConnecting">
+      💡 The assistant will greet you first when you call!
+    </p>
   </div>
 
   <div class="controls">
     <button 
-      class="btn btn-primary" 
-      (click)="connect()" 
-      [disabled]="isConnected">
-      Connect
-    </button>
-    
-    <button 
-      class="btn btn-secondary" 
-      (click)="disconnect()" 
-      [disabled]="!isConnected">
-      Disconnect
-    </button>
-    
-    <button 
       class="btn btn-success" 
-      (click)="startRecording()" 
-      [disabled]="!isConnected || isRecording">
-      Start Recording
+      (click)="startCall()" 
+      [disabled]="isConnected || isConnecting">
+      {{ isConnecting ? 'Connecting...' : 'Call Assistant' }}
     </button>
     
     <button 
       class="btn btn-danger" 
-      (click)="stopRecording()" 
-      [disabled]="!isRecording">
-      Stop Recording
+      (click)="hangUp()" 
+      [disabled]="!isConnected && !isConnecting">
+      Hang Up
     </button>
   </div>
 
@@ -43,4 +32,6 @@
       </div>
     </div>
   </div>
+
+  <audio #remoteAudio autoplay playsinline></audio>
 </div>

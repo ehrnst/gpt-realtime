@@ -1,9 +1,3 @@
 namespace GptRealtime.Api.Services;
 
-public interface IRealtimeService
-{
-    Task HandleRealtimeSession(
-        Stream inputStream, 
-        Stream outputStream, 
-        CancellationToken cancellationToken);
-}
+// Placeholder to preserve file history; no realtime relay interface is required for WebRTC.
