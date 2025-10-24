@@ -1,0 +1,46 @@
+<div class="voice-assistant-container">
+  <h1>GPT Realtime Voice Assistant</h1>
+  
+  <div class="status-panel">
+    <p class="status">Status: {{ statusMessage }}</p>
+  </div>
+
+  <div class="controls">
+    <button 
+      class="btn btn-primary" 
+      (click)="connect()" 
+      [disabled]="isConnected">
+      Connect
+    </button>
+    
+    <button 
+      class="btn btn-secondary" 
+      (click)="disconnect()" 
+      [disabled]="!isConnected">
+      Disconnect
+    </button>
+    
+    <button 
+      class="btn btn-success" 
+      (click)="startRecording()" 
+      [disabled]="!isConnected || isRecording">
+      Start Recording
+    </button>
+    
+    <button 
+      class="btn btn-danger" 
+      (click)="stopRecording()" 
+      [disabled]="!isRecording">
+      Stop Recording
+    </button>
+  </div>
+
+  <div class="messages-panel">
+    <h3>Activity Log</h3>
+    <div class="messages-list">
+      <div *ngFor="let message of messages" class="message">
+        {{ message }}
+      </div>
+    </div>
+  </div>
+</div>
