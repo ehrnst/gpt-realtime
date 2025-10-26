@@ -15,8 +15,6 @@ export class RealtimeService {
   private localStream: MediaStream | null = null;
   private remoteAudioElement: HTMLAudioElement | null = null;
   private messageSubject = new Subject<RealtimeMessage>();
-  private sessionInstructions: string = '';
-  private voiceSetting: string = 'alloy';
 
   async connect(
     clientSecret: string,
@@ -30,9 +28,7 @@ export class RealtimeService {
     this.remoteAudioElement = audioElement;
     this.messageSubject = new Subject<RealtimeMessage>();
     
-    // Store the instructions and voice from backend
-    this.sessionInstructions = systemInstructions || 'You are a helpful AI assistant.';
-    this.voiceSetting = voice || 'alloy';
+    // Backend handles all session configuration
 
     this.peerConnection = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
@@ -133,8 +129,6 @@ export class RealtimeService {
     this.localStream.getAudioTracks().forEach((track) => {
       track.enabled = true;
     });
-
-    this.sendEvent({ type: 'input_audio_buffer.start' });
   }
 
   stopAudioCapture(): void {
@@ -170,27 +164,10 @@ export class RealtimeService {
   }
 
   private sendSessionUpdate(): void {
-    // Send session update to initialize the conversation
-    console.log('Sending session update with instructions:', this.sessionInstructions);
-    this.sendEvent({
-      type: 'session.update',
-      session: {
-        modalities: ['text', 'audio'],
-        instructions: this.sessionInstructions,
-        voice: this.voiceSetting,
-        input_audio_format: 'pcm16',
-        output_audio_format: 'pcm16',
-        input_audio_transcription: {
-          model: 'whisper-1'
-        },
-        turn_detection: {
-          type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500
-        }
-      }
-    });
+    // Session should be configured by the backend
+    // Frontend just needs to trigger the initial greeting
+    console.log('Session established, triggering initial response');
+    this.triggerGreeting();
   }
 
   private configureDataChannel(channel: RTCDataChannel): void {
@@ -201,9 +178,10 @@ export class RealtimeService {
         const payload = JSON.parse(event.data);
         this.messageSubject.next(payload);
         
-        // When session is updated (after our session.update), trigger greeting
-        if (payload.type === 'session.updated') {
-          console.log('Session updated, triggering greeting');
+        // No need to wait for session.updated since backend handles configuration
+        // Just handle session.created to trigger initial greeting
+        if (payload.type === 'session.created') {
+          console.log('Session created, triggering greeting');
           setTimeout(() => {
             this.triggerGreeting();
           }, 100); // Small delay to ensure everything is ready
@@ -216,8 +194,8 @@ export class RealtimeService {
     channel.onopen = () => {
       this.messageSubject.next({ type: 'peer.data_channel', state: 'open' });
       
-      // Send session update after data channel opens
-      this.sendSessionUpdate();
+      // Backend handles session configuration
+      // Frontend just waits for session.created to trigger greeting
     };
 
     channel.onclose = () => {
