@@ -12,6 +12,7 @@ services:
       - OpenAI__BaseUrl=${OPENAI_BASE_URL}
       - OpenAI__Model=${OPENAI_MODEL}
       - OpenAI__Voice=${OPENAI_VOICE}
+      - OpenAI__SystemInstructions=${OPENAI_SYSTEM_INSTRUCTIONS}
     env_file:
       - .env
     networks:
