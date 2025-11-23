@@ -19,6 +19,7 @@ public class TokenService : ITokenService
     private readonly HttpClient _httpClient;
     private readonly OpenAIClient _openAIClient;
     private readonly OpenAISettings _settings;
+private readonly PersonaSettings _personaSettings;
     private readonly ILogger<TokenService> _logger;
 
     public TokenService(
@@ -30,6 +31,7 @@ public class TokenService : ITokenService
         _httpClient = httpClient;
         _openAIClient = openAIClient;
         _settings = settings.Value;
+_personaSettings = personaSettings.Value;
         _logger = logger;
     }
 
