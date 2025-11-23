@@ -1,0 +1,72 @@
+<!-- REFERENCE IMPLEMENTATION - This shows the updated voice-assistant.component.html -->
+<!-- Main changes: Add persona selector and conditional display -->
+
+<div class="voice-assistant-container">
+  <!-- ADDED: Show persona selector before connection -->
+  <app-persona-selector 
+    *ngIf="showPersonaSelector"
+    (personaSelected)="onPersonaSelected($event)">
+  </app-persona-selector>
+  
+  <!-- UPDATED: Show voice assistant after persona selection -->
+  <div *ngIf="!showPersonaSelector" class="voice-assistant">
+    <!-- ADDED: Persona info section -->
+    <div class="persona-info">
+      <div class="persona-header">
+        <h3>Talking with {{ selectedPersona?.name }}</h3>
+        <button 
+          (click)="changePersona()" 
+          class="change-persona-btn"
+          [disabled]="isRecording">
+          Change Assistant
+        </button>
+      </div>
+      <p class="persona-description">{{ selectedPersona?.description }}</p>
+    </div>
+
+    <!-- Existing voice assistant UI -->
+    <div class="status-container">
+      <div class="status" [class.connected]="isConnected">
+        {{ statusMessage }}
+      </div>
+    </div>
+
+    <div class="controls">
+      <button 
+        *ngIf="!isConnected"
+        (click)="connect()"
+        class="connect-btn">
+        Connect
+      </button>
+
+      <button 
+        *ngIf="isConnected && !isRecording"
+        (click)="startRecording()"
+        class="record-btn">
+        🎤 Start Talking
+      </button>
+
+      <button 
+        *ngIf="isConnected && isRecording"
+        (click)="stopRecording()"
+        class="stop-btn recording">
+        ⏸️ Stop
+      </button>
+
+      <button 
+        *ngIf="isConnected"
+        (click)="disconnect()"
+        class="disconnect-btn"
+        [disabled]="isRecording">
+        Disconnect
+      </button>
+    </div>
+
+    <div class="messages" *ngIf="messages.length > 0">
+      <h4>Recent Messages:</h4>
+      <div class="message" *ngFor="let message of messages.slice(-5)">
+        <span class="message-type">{{ message.type }}</span>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,179 @@
+/* REFERENCE IMPLEMENTATION - Additional CSS for persona features */
+/* Add these styles to voice-assistant.component.css */
+
+.voice-assistant-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* ADDED: Persona info styles */
+.persona-info {
+  background: #f5f5f5;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.persona-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.persona-header h3 {
+  margin: 0;
+  color: #1976d2;
+  font-size: 24px;
+}
+
+.change-persona-btn {
+  background: #757575;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s;
+}
+
+.change-persona-btn:hover:not(:disabled) {
+  background: #616161;
+}
+
+.change-persona-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.persona-description {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+/* Existing styles */
+.voice-assistant {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+}
+
+.status-container {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.status {
+  padding: 15px;
+  border-radius: 8px;
+  background: #e0e0e0;
+  color: #333;
+  font-size: 16px;
+  transition: all 0.3s;
+}
+
+.status.connected {
+  background: #c8e6c9;
+  color: #2e7d32;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 12px 24px;
+  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 500;
+}
+
+.connect-btn {
+  background: #2196f3;
+  color: white;
+}
+
+.connect-btn:hover {
+  background: #1976d2;
+}
+
+.record-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.record-btn:hover {
+  background: #388e3c;
+}
+
+.stop-btn {
+  background: #ff9800;
+  color: white;
+}
+
+.stop-btn:hover {
+  background: #f57c00;
+}
+
+.stop-btn.recording {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.disconnect-btn {
+  background: #f44336;
+  color: white;
+}
+
+.disconnect-btn:hover:not(:disabled) {
+  background: #d32f2f;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.messages {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.messages h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.message {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.message-type {
+  color: #1976d2;
+  font-weight: bold;
+}
