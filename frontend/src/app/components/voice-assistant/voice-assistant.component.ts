@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Router } from '@angular/router';
 import { firstValueFrom, Subscription } from 'rxjs';
-import { TokenService } from '../../services/token.service';
+import { TokenService, Persona } from '../../services/token.service';
 import { RealtimeService, RealtimeMessage } from '../../services/realtime.service';
 
 @Component({
@@ -14,14 +15,22 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy {
   isAudioCaptureEnabled = false;
   statusMessage = 'Ready to call';
   messages: string[] = [];
+  selectedPersona?: Persona;
   private messageSubscription?: Subscription;
   @ViewChild('remoteAudio') remoteAudioRef?: ElementRef<HTMLAudioElement>;
   @ViewChild('messagesContainer') messagesContainer?: ElementRef<HTMLDivElement>;
 
   constructor(
     private tokenService: TokenService,
-    private realtimeService: RealtimeService
-  ) {}
+    private realtimeService: RealtimeService,
+    private router: Router
+  ) {
+    // Get persona from router state
+    const navigation = this.router.getCurrentNavigation();
+    if (navigation?.extras?.state) {
+      this.selectedPersona = navigation.extras.state['persona'];
+    }
+  }
 
   ngOnInit(): void {}
 
@@ -53,7 +62,7 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy {
     this.statusMessage = 'Calling...';
 
     try {
-      const tokenData = await firstValueFrom(this.tokenService.getToken());
+      const tokenData = await firstValueFrom(this.tokenService.getToken(this.selectedPersona?.id));
       const messages$ = await this.realtimeService.connect(
         tokenData.clientSecret,
         tokenData.realtimeUrl,
@@ -79,6 +88,10 @@ export class VoiceAssistantComponent implements OnInit, OnDestroy {
       this.statusMessage = 'Call failed: ' + (error?.message ?? 'Unknown');
       this.isConnecting = false;
     }
+  }
+
+  goBack(): void {
+    this.router.navigate(['/']);
   }
 
   hangUp(): void {

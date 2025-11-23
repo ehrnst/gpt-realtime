@@ -7,7 +7,7 @@ namespace GptRealtime.Api.Services;
 
 public interface ITokenService
 {
-    Task<SessionToken> CreateSessionTokenAsync(CancellationToken cancellationToken = default);
+    Task<SessionToken> CreateSessionTokenAsync(string? personaId = null, CancellationToken cancellationToken = default);
     RealtimeClient GetRealtimeClient();
     RealtimeClient GetRealtimeClient(SessionToken sessionToken);
 }

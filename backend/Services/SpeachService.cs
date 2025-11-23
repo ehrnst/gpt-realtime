@@ -33,18 +33,35 @@ public class TokenService : ITokenService
         _logger = logger;
     }
 
-    public async Task<SessionToken> CreateSessionTokenAsync(CancellationToken cancellationToken = default)
+    public async Task<SessionToken> CreateSessionTokenAsync(string? personaId = null, CancellationToken cancellationToken = default)
     {
         ValidateSettings();
+
+        // Get the persona configuration
+        Persona? persona = null;
+        if (!string.IsNullOrWhiteSpace(personaId))
+        {
+            persona = _settings.Personas.FirstOrDefault(p => p.Id == personaId);
+            if (persona == null)
+            {
+                _logger.LogWarning("Persona with ID '{PersonaId}' not found. Using default settings.", personaId);
+            }
+        }
 
         var sessionEndpoint = BuildSessionEndpoint();
 
         try
         {
-            var sessionConfig = CreateSessionConfiguration();
+            var sessionConfig = CreateSessionConfiguration(persona);
             var response = await SendSessionRequest(sessionEndpoint, sessionConfig, cancellationToken);
             
-            return ParseSessionResponse(response);
+            var token = ParseSessionResponse(response);
+            
+            // Include persona information in the token
+            token.Voice = persona?.Voice ?? _settings.Voice;
+            token.SystemInstructions = persona?.SystemInstructions ?? _settings.SystemInstructions;
+            
+            return token;
         }
         catch (HttpRequestException ex)
         {
@@ -121,14 +138,14 @@ public class TokenService : ITokenService
         return jsonDocument?.RootElement ?? throw new InvalidOperationException("Empty response received");
     }
 
-    private object CreateSessionConfiguration()
+    private object CreateSessionConfiguration(Persona? persona = null)
     {
         return new SessionConfigurationRequest
         {
             Model = _settings.Model,
-            Voice = _settings.Voice,
+            Voice = persona?.Voice ?? _settings.Voice,
             Modalities = new[] { "text", "audio" },
-            Instructions = _settings.SystemInstructions,
+            Instructions = persona?.SystemInstructions ?? _settings.SystemInstructions,
             TurnDetection = new TurnDetectionConfig
             {
                 Type = "server_vad",

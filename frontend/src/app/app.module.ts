@@ -5,11 +5,13 @@ import { HttpClientModule } from '@angular/common/http';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { VoiceAssistantComponent } from './components/voice-assistant/voice-assistant.component';
+import { PersonaSelectorComponent } from './components/persona-selector/persona-selector.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    VoiceAssistantComponent
+    VoiceAssistantComponent,
+    PersonaSelectorComponent
   ],
   imports: [
     BrowserModule,
