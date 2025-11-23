@@ -43,7 +43,7 @@ _personaSettings = personaSettings.Value;
 
         try
         {
-            var sessionConfig = CreateSessionConfiguration();
+            var sessionConfig = CreateSessionConfiguration(personaId);
             var response = await SendSessionRequest(sessionEndpoint, sessionConfig, cancellationToken);
             
             return ParseSessionResponse(response);
@@ -123,14 +123,14 @@ _personaSettings = personaSettings.Value;
         return jsonDocument?.RootElement ?? throw new InvalidOperationException("Empty response received");
     }
 
-    private object CreateSessionConfiguration()
+    private object CreateSessionConfiguration(string? personaId = null)
     {
         return new SessionConfigurationRequest
         {
             Model = _settings.Model,
-            Voice = _settings.Voice,
+            Voice = GetVoiceForPersona(personaId),
             Modalities = new[] { "text", "audio" },
-            Instructions = _settings.SystemInstructions,
+            Instructions = GetInstructionsForPersona(personaId),
             TurnDetection = new TurnDetectionConfig
             {
                 Type = "server_vad",
