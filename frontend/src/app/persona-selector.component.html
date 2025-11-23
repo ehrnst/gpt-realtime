@@ -1,0 +1,23 @@
+<div class="persona-selector">
+  <h2>Choose Your Assistant</h2>
+  
+  <div *ngIf="loading" class="loading">
+    Loading personas...
+  </div>
+  
+  <div *ngIf="error" class="error">
+    {{ error }}
+  </div>
+  
+  <div *ngIf="!loading && !error" class="persona-grid">
+    <div 
+      *ngFor="let persona of personas" 
+      class="persona-card"
+      [class.selected]="isSelected(persona)"
+      (click)="selectPersona(persona)">
+      <h3>{{ persona.name }}</h3>
+      <p>{{ persona.description }}</p>
+      <span class="voice-badge">Voice: {{ persona.voice }}</span>
+    </div>
+  </div>
+</div>
