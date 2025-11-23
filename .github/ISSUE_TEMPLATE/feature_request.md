@@ -3,8 +3,7 @@ name: Feature request
 about: Suggest a new feature
 title: 'feat: a shord descriptive title'
 labels: enhancement
-assignees: '
-'
+assignees: ''
 ---
 
 **Is your feature request related to a problem? Please describe.**
