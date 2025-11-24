@@ -53,7 +53,7 @@ docker compose up --build
 - `OPENAI_API_KEY`: Azure OpenAI API key
 - `OPENAI_BASE_URL`: Azure OpenAI endpoint (e.g., `https://your-resource.openai.azure.com`)
 - `OPENAI_MODEL`: Model name (e.g., `gpt-4o-realtime-preview`)
-- `OPENAI_VOICE`: Voice option (`alloy`, `echo`, `fable`, `onyx`, `nova`, `shimmer`)
+- `OPENAI_VOICE`: Voice option (`alloy`, `ash`, `ballad`, `coral`, `echo`, `sage`, `shimmer`, `verse`, `marin`, `cedar`)
 
 ### Configuration Patterns
 

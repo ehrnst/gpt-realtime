@@ -71,7 +71,7 @@ Edit `.env` and add your OpenAI API key:
 OPENAI_API_KEY=sk-your-api-key-here
 OPENAI_BASE_URL=  # Optional: for Azure OpenAI, e.g., https://your-resource.openai.azure.com
 OPENAI_MODEL=gpt-4o-realtime-preview-2024-10-01
-OPENAI_VOICE=alloy  # Options: alloy, echo, fable, onyx, nova, shimmer
+OPENAI_VOICE=alloy  # Options: alloy, ash, ballad, coral, echo, sage, shimmer, verse, marin, cedar
 ```
 
 For the backend, also update `backend/appsettings.json` or use environment variables.
