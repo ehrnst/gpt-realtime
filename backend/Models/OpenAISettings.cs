@@ -8,4 +8,5 @@ public class OpenAISettings
     public string Voice { get; set; } = "alloy";
     public string SystemInstructions { get; set; } = "You are a helpful AI assistant for backend development and technical discussions.";
     public string Region { get; set; } = "swedencentral"; // Default region for WebRTC
+    public List<Persona> Personas { get; set; } = new List<Persona>();
 }

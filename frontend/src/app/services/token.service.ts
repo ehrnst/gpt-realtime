@@ -11,6 +11,15 @@ export interface SessionToken {
   voice: string;
 }
 
+export interface Persona {
+  id: string;
+  name: string;
+  description: string;
+  voice: string;
+  systemInstructions: string;
+  icon: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -19,7 +28,12 @@ export class TokenService {
 
   constructor(private http: HttpClient) { }
 
-  getToken(): Observable<SessionToken> {
-    return this.http.get<SessionToken>(`${this.apiUrl}/api/token`);
+  getToken(personaId?: string): Observable<SessionToken> {
+    const options = personaId ? { params: { personaId } } : {};
+    return this.http.get<SessionToken>(`${this.apiUrl}/api/token`, options);
+  }
+
+  getPersonas(): Observable<Persona[]> {
+    return this.http.get<Persona[]>(`${this.apiUrl}/api/token/personas`);
   }
 }
