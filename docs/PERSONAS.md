@@ -50,17 +50,17 @@ The application comes with 5 pre-configured personas:
    - Languages: Norwegian, English
 
 3. **Fitness Trainer** 💪
-   - Voice: fable
+   - Voice: ballad
    - Focus: Health and fitness goals
    - Languages: Norwegian, English
 
 4. **Study Buddy** 📚
-   - Voice: nova
+   - Voice: sage
    - Focus: Learning and education support
    - Languages: Norwegian, English
 
 5. **Tech Advisor** 💻
-   - Voice: onyx
+   - Voice: ash
    - Focus: Technical expertise and problem-solving
    - Languages: Norwegian, English
 
@@ -90,7 +90,7 @@ Personas are configured in the backend `appsettings.json` file under the `OpenAI
 - **Id**: Unique identifier for the persona (used in API calls)
 - **Name**: Display name shown in the UI
 - **Description**: Brief description of the persona's purpose
-- **Voice**: OpenAI voice identifier (alloy, echo, fable, nova, onyx, shimmer)
+- **Voice**: OpenAI voice identifier (alloy, ash, ballad, coral, echo, sage, shimmer, verse, marin, cedar)
 - **Icon**: Emoji icon representing the persona
 - **SystemInstructions**: Custom system prompt that defines the persona's behavior
 
